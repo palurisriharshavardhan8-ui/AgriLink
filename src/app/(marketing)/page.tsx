@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -25,6 +26,7 @@ import {
   CircleDollarSign,
   Activity,
   Boxes,
+  LayoutDashboard,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -174,18 +176,12 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="gap-2 shadow-md hover:shadow-lg transition-all"
-                  onClick={() => {
-                    const el = document.getElementById('platform');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  <span>Explore AgriLink</span>
-                  <ArrowRight className="h-5 w-5 text-agri-sprout-bright" />
-                </Button>
+                <Link href="/marketplace">
+                  <Button variant="primary" size="lg" className="gap-2 shadow-md hover:shadow-lg transition-all">
+                    <span>Launch Application</span>
+                    <LayoutDashboard className="h-5 w-5 text-agri-sprout-bright" />
+                  </Button>
+                </Link>
 
                 <Button
                   variant="outline"
@@ -506,18 +502,16 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-3">
-                <Button
-                  variant="harvest"
-                  size="lg"
-                  className="gap-2 text-agri-earth-900 font-bold"
-                  onClick={() => {
-                    const el = document.getElementById('how-it-works');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  <span>Explore Workflow</span>
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
+                <Link href="/marketplace">
+                  <Button
+                    variant="harvest"
+                    size="lg"
+                    className="gap-2 text-agri-earth-900 font-bold"
+                  >
+                    <span>Launch Application</span>
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
 
                 <Button
                   variant="outline"

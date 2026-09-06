@@ -6,16 +6,16 @@ import { Container } from '@/components/ui/Container';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { APP_NAME, PROBLEM_STATEMENT_ID } from '@/utils/constants';
-import { Sprout, Menu, X, ArrowRight } from 'lucide-react';
+import { Sprout, Menu, X, LayoutDashboard } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { label: 'Home', href: '#' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Platform Pillars', href: '#platform' },
-    { label: 'Ecosystem Roles', href: '#roles' },
+    { label: 'Home', href: '/' },
+    { label: 'How It Works', href: '/#how-it-works' },
+    { label: 'Platform Pillars', href: '/#platform' },
+    { label: 'Ecosystem Roles', href: '/#roles' },
   ];
 
   return (
@@ -57,28 +57,16 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const el = document.getElementById('roles');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Explore Roles
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              className="gap-2"
-              onClick={() => {
-                const el = document.getElementById('how-it-works');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              <span>Get Started</span>
-              <ArrowRight className="h-4 w-4 text-agri-sprout-bright" />
-            </Button>
+            <Link href="/marketplace">
+              <Button
+                variant="primary"
+                size="sm"
+                className="gap-2 shadow-sm"
+              >
+                <LayoutDashboard className="h-4 w-4 text-agri-sprout-bright" />
+                <span>Launch App</span>
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -108,31 +96,16 @@ export const Navbar: React.FC = () => {
               ))}
             </nav>
             <div className="pt-2 border-t border-agri-earth-100 flex flex-col gap-2 px-2">
-              <Button
-                variant="outline"
-                size="md"
-                className="w-full justify-center"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  const el = document.getElementById('roles');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Explore Roles
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                className="w-full justify-center gap-2"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  const el = document.getElementById('how-it-works');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <span>Get Started</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              <Link href="/marketplace" onClick={() => setMobileMenuOpen(false)}>
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="w-full justify-center gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Launch Application</span>
+                </Button>
+              </Link>
             </div>
           </div>
         )}
