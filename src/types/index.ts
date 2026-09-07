@@ -1,3 +1,5 @@
+export * from './database.types';
+
 /**
  * AgriLink Core User Roles
  * Preserving all 5 application roles as defined in product specification.
