@@ -3,70 +3,17 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { ROLE_NAV_ITEMS } from '@/lib/auth/rbac';
 import { cn } from '@/lib/utils';
-import {
-  Store,
-  Sprout,
-  ShoppingBag,
-  Building2,
-  Truck,
-  ShieldCheck,
-  Package,
-  User,
-  ChevronRight,
-} from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { ChevronRight, ShieldCheck } from 'lucide-react';
 
 export const AppSidebar: React.FC = () => {
   const pathname = usePathname();
+  const { role } = useAuth();
 
-  const navItems = [
-    {
-      label: 'Marketplace',
-      href: '/marketplace',
-      icon: Store,
-      badge: 'Core',
-    },
-    {
-      label: 'Farmer / FPO',
-      href: '/farmer',
-      icon: Sprout,
-      badge: 'Producer',
-    },
-    {
-      label: 'Consumer Hub',
-      href: '/consumer',
-      icon: ShoppingBag,
-      badge: 'Retail',
-    },
-    {
-      label: 'Bulk Buyer',
-      href: '/bulk-buyer',
-      icon: Building2,
-      badge: 'B2B',
-    },
-    {
-      label: 'Delivery & Route',
-      href: '/delivery',
-      icon: Truck,
-      badge: 'Logistics',
-    },
-    {
-      label: 'Platform Admin',
-      href: '/admin',
-      icon: ShieldCheck,
-      badge: 'Ops',
-    },
-    {
-      label: 'Orders & Tracking',
-      href: '/orders',
-      icon: Package,
-    },
-    {
-      label: 'Profile & Roles',
-      href: '/profile',
-      icon: User,
-    },
-  ];
+  const navItems = ROLE_NAV_ITEMS[role] || ROLE_NAV_ITEMS.consumer;
 
   return (
     <>
@@ -74,10 +21,13 @@ export const AppSidebar: React.FC = () => {
       <aside className="hidden lg:flex w-64 flex-col border-r border-agri-earth-200 bg-white min-h-[calc(100vh-4rem)] p-4 shrink-0 justify-between">
         <div className="space-y-6">
           {/* Section Header */}
-          <div className="px-3 pt-2">
+          <div className="px-3 pt-2 flex items-center justify-between">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-agri-earth-700">
-              Application Modules
+              Role Modules
             </span>
+            <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+              {role.replace('_', ' ').toUpperCase()}
+            </Badge>
           </div>
 
           {/* Navigation Links List */}
@@ -127,18 +77,21 @@ export const AppSidebar: React.FC = () => {
         {/* Sidebar Footer Info */}
         <div className="p-3 rounded-2xl bg-agri-sprout-soft/40 border border-agri-sprout-bright/30 text-xs space-y-1">
           <div className="font-bold text-agri-evergreen flex items-center justify-between">
-            <span>5 Ecosystem Roles</span>
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-agri-sprout" />
+              <span>RBAC Active</span>
+            </span>
             <ChevronRight className="h-3.5 w-3.5" />
           </div>
           <p className="text-[11px] text-agri-earth-700 leading-tight">
-            Navigation structure ready for module functionality.
+            Navigation filtered for <span className="font-bold">{role.replace('_', ' ')}</span> role.
           </p>
         </div>
       </aside>
 
       {/* Mobile/Tablet Horizontal Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-agri-earth-200 px-2 py-2 flex items-center justify-around shadow-lg">
-        {navItems.slice(0, 5).map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
