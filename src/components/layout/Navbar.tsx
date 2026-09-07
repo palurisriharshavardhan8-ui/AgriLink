@@ -2,14 +2,16 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import { Container } from '@/components/ui/Container';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { APP_NAME, PROBLEM_STATEMENT_ID } from '@/utils/constants';
-import { Sprout, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Sprout, Menu, X, LayoutDashboard, LogIn, LogOut } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   const navLinks = [
     { label: 'Home', href: '/' },
@@ -57,16 +59,40 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Action Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            <Link href="/marketplace">
-              <Button
-                variant="primary"
-                size="sm"
-                className="gap-2 shadow-sm"
-              >
-                <LayoutDashboard className="h-4 w-4 text-agri-sprout-bright" />
-                <span>Launch App</span>
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => signOut()}
+                  className="gap-1.5 text-xs"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </Button>
+                <Link href="/marketplace">
+                  <Button variant="primary" size="sm" className="gap-2 shadow-sm">
+                    <LayoutDashboard className="h-4 w-4 text-agri-sprout-bright" />
+                    <span>Go to Console</span>
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                    <LogIn className="h-4 w-4" />
+                    <span>Sign In</span>
+                  </Button>
+                </Link>
+                <Link href="/marketplace">
+                  <Button variant="primary" size="sm" className="gap-2 shadow-sm">
+                    <LayoutDashboard className="h-4 w-4 text-agri-sprout-bright" />
+                    <span>Launch App</span>
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -96,12 +122,16 @@ export const Navbar: React.FC = () => {
               ))}
             </nav>
             <div className="pt-2 border-t border-agri-earth-100 flex flex-col gap-2 px-2">
+              {!user && (
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" size="md" className="w-full justify-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    <span>Sign In</span>
+                  </Button>
+                </Link>
+              )}
               <Link href="/marketplace" onClick={() => setMobileMenuOpen(false)}>
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="w-full justify-center gap-2"
-                >
+                <Button variant="primary" size="md" className="w-full justify-center gap-2">
                   <LayoutDashboard className="h-4 w-4" />
                   <span>Launch Application</span>
                 </Button>

@@ -2,13 +2,26 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { APP_NAME } from '@/utils/constants';
-import { Sprout, Search, Globe, User, Bell } from 'lucide-react';
+import { Sprout, Search, Globe, User, LogOut, LogIn } from 'lucide-react';
 
 export const AppHeader: React.FC = () => {
+  const { user, profile, role, signOut } = useAuth();
+
+  const roleBadgeVariants: Record<string, 'evergreen' | 'sprout' | 'harvest' | 'sand' | 'earth'> = {
+    farmer_fpo: 'evergreen',
+    consumer: 'sprout',
+    bulk_buyer: 'harvest',
+    delivery_partner: 'sand',
+    admin: 'earth',
+  };
+
+  const currentBadgeVariant = roleBadgeVariants[role] || 'sprout';
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-agri-earth-200 bg-white/95 backdrop-blur-md">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
@@ -23,8 +36,8 @@ export const AppHeader: React.FC = () => {
             </span>
           </Link>
           <span className="text-agri-earth-300 hidden sm:inline-block">|</span>
-          <Badge variant="sprout" className="text-[11px] font-semibold">
-            App Console
+          <Badge variant={currentBadgeVariant} className="text-[11px] font-semibold">
+            {role.replace('_', ' ').toUpperCase()}
           </Badge>
         </div>
 
@@ -37,7 +50,7 @@ export const AppHeader: React.FC = () => {
           <Search className="h-4 w-4 text-agri-earth-700 absolute left-3 top-2.5 pointer-events-none" />
         </div>
 
-        {/* Right: Actions, Back to Public Site, User Profile Shell */}
+        {/* Right: Actions, Back to Public Site, User Profile & Auth Button */}
         <div className="flex items-center gap-3">
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-agri-earth-700 hover:text-agri-evergreen">
@@ -46,29 +59,43 @@ export const AppHeader: React.FC = () => {
             </Button>
           </Link>
 
-          <button
-            type="button"
-            className="h-9 w-9 rounded-xl border border-agri-earth-200 bg-white flex items-center justify-center text-agri-earth-700 hover:bg-agri-earth-100 transition-colors relative"
-            title="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-agri-sprout" />
-          </button>
-
-          {/* User Profile Avatar Placeholder */}
-          <div className="flex items-center gap-2.5 pl-2 border-l border-agri-earth-200">
-            <div className="h-8 w-8 rounded-full bg-agri-sprout-soft border border-agri-sprout-bright/40 text-agri-evergreen flex items-center justify-center font-bold text-xs">
-              <User className="h-4 w-4" />
+          {/* User Profile Info & Auth Action */}
+          {user ? (
+            <div className="flex items-center gap-3 pl-2 border-l border-agri-earth-200">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-agri-sprout-soft border border-agri-sprout-bright/40 text-agri-evergreen flex items-center justify-center font-bold text-xs">
+                  <User className="h-4 w-4" />
+                </div>
+                <div className="hidden lg:flex flex-col text-left">
+                  <span className="text-xs font-bold text-agri-earth-900 leading-none">
+                    {profile?.fullName || user.email?.split('@')[0] || 'User'}
+                  </span>
+                  <span className="text-[10px] text-agri-earth-700 leading-tight">
+                    {user.email}
+                  </span>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-xs px-2.5 py-1"
+                onClick={() => signOut()}
+                title="Sign Out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Sign Out</span>
+              </Button>
             </div>
-            <div className="hidden lg:flex flex-col text-left">
-              <span className="text-xs font-bold text-agri-earth-900 leading-none">
-                AgriLink User
-              </span>
-              <span className="text-[10px] text-agri-earth-700 leading-tight">
-                Role Select Active
-              </span>
+          ) : (
+            <div className="flex items-center gap-2 pl-2 border-l border-agri-earth-200">
+              <Link href="/login">
+                <Button variant="outline" size="sm" className="gap-1 text-xs">
+                  <LogIn className="h-3.5 w-3.5" />
+                  <span>Sign In</span>
+                </Button>
+              </Link>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </header>
