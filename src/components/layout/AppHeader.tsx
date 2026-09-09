@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +12,7 @@ import { Sprout, Search, Globe, User, LogOut, LogIn } from 'lucide-react';
 
 export const AppHeader: React.FC = () => {
   const { user, profile, role, signOut } = useAuth();
+  const router = useRouter();
 
   const roleBadgeVariants: Record<string, 'evergreen' | 'sprout' | 'harvest' | 'sand' | 'earth'> = {
     farmer_fpo: 'evergreen',
@@ -79,7 +81,10 @@ export const AppHeader: React.FC = () => {
                 variant="outline"
                 size="sm"
                 className="gap-1 text-xs px-2.5 py-1"
-                onClick={() => signOut()}
+                onClick={async () => {
+                  await signOut();
+                  router.push('/login');
+                }}
                 title="Sign Out"
               >
                 <LogOut className="h-3.5 w-3.5" />

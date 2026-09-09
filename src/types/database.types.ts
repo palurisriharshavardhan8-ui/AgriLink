@@ -231,7 +231,50 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      place_direct_order: {
+        Args: {
+          p_listing_id: string;
+          p_quantity_kg: number;
+        };
+        Returns: Json;
+      };
+      cancel_order: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: Json;
+      };
+      confirm_order: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: Json;
+      };
+      dispatch_and_assign_delivery_job: {
+        Args: {
+          p_order_id: string;
+          p_driver_id: string | null;
+          p_pickup_location: string;
+          p_delivery_location: string;
+        };
+        Returns: Json;
+      };
+      update_delivery_status: {
+        Args: {
+          p_task_id: string;
+          p_status: DeliveryStatus;
+        };
+        Returns: Json;
+      };
+      get_available_delivery_partners: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          full_name: string | null;
+          phone_number: string | null;
+          email: string;
+        }[];
+      };
     };
     Enums: {
       user_role: UserRole;

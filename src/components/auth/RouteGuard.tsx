@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { isRouteAllowed, ROLE_DEFAULT_ROUTES } from '@/lib/auth/rbac';
@@ -12,7 +12,14 @@ import { ShieldAlert, ArrowRight, Home } from 'lucide-react';
 export const RouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, loading } = useAuth();
+  const { user, role, loading } = useAuth();
+
+  // Redirect unauthenticated users to /login immediately after auth state resolves
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [loading, user, pathname, router]);
 
   if (loading) {
     return (
@@ -21,6 +28,11 @@ export const RouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }
         <span className="text-xs font-semibold text-agri-earth-700">Verifying role permissions...</span>
       </div>
     );
+  }
+
+  // While redirect to /login is in flight, render nothing to prevent flash of protected content
+  if (!user) {
+    return null;
   }
 
   const allowed = isRouteAllowed(role, pathname);

@@ -20,7 +20,17 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.local
 .env
+
+# testing
+/coverage
+playwright-report/
+test-results/
+
+# os files
+.DS_Store
+*.DS_Store
 
 # vercel
 .vercel
