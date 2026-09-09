@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { createProduceListing } from '@/lib/services/listings';
+import { calculateFairPrice } from '@/lib/services/fairPrice';
 import { ProduceCategory } from '@/types/database.types';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { FairPriceCard } from '@/components/pricing/FairPriceCard';
 import { X, Sprout, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface CreateListingModalProps {
@@ -38,6 +40,22 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [quantityKg, setQuantityKg] = useState('');
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selectedMandiId, setSelectedMandiId] = useState('');
+
+  // Dynamically compute deterministic fair price recommendation
+  const fairPriceRecommendation = useMemo(() => {
+    return calculateFairPrice({
+      category,
+      produceName: title,
+      quantityKg: parseFloat(quantityKg) || 1,
+      location: selectedMandiId || undefined,
+    });
+  }, [category, title, quantityKg, selectedMandiId]);
+
+  const handleAcceptFairPrice = (suggestedPrice: number, benchmarkPrice: number) => {
+    setPricePerKg(suggestedPrice.toString());
+    setMandiBenchmark(benchmarkPrice.toString());
+  };
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -103,6 +121,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         setQuantityKg('');
         setDescription('');
         setImageFile(null);
+        setSelectedMandiId('');
         setSuccessMsg(null);
       }, 1500);
     } catch (err: unknown) {
@@ -184,7 +203,10 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
                 <button
                   type="button"
                   key={cat.id}
-                  onClick={() => setCategory(cat.id)}
+                  onClick={() => {
+                    setCategory(cat.id);
+                    setSelectedMandiId('');
+                  }}
                   disabled={submitting || !isFarmerOrAdmin}
                   className={`p-2 rounded-xl text-xs font-semibold border transition-all text-left ${
                     category === cat.id
@@ -198,29 +220,6 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Selling Price (₹ per kg)"
-              type="number"
-              step="0.5"
-              placeholder="e.g. 35"
-              value={pricePerKg}
-              onChange={(e) => setPricePerKg(e.target.value)}
-              required
-              disabled={submitting || !isFarmerOrAdmin}
-            />
-
-            <Input
-              label="Mandi Benchmark (₹ per kg)"
-              type="number"
-              step="0.5"
-              placeholder="e.g. 42 (optional)"
-              value={mandiBenchmark}
-              onChange={(e) => setMandiBenchmark(e.target.value)}
-              disabled={submitting || !isFarmerOrAdmin}
-            />
-          </div>
-
           <Input
             label="Available Stock Quantity (kg)"
             type="number"
@@ -230,6 +229,50 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             required
             disabled={submitting || !isFarmerOrAdmin}
           />
+
+          {/* AgriLink Fair Price Engine Component */}
+          <FairPriceCard
+            recommendation={fairPriceRecommendation}
+            category={category}
+            selectedMandiId={selectedMandiId}
+            onSelectMandi={(mandiId) => setSelectedMandiId(mandiId)}
+            onAcceptFairPrice={handleAcceptFairPrice}
+            currentPricePerKg={pricePerKg}
+            quantityKg={parseFloat(quantityKg) || 1}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Input
+                label="Selling Price (₹ per kg)"
+                type="number"
+                step="0.5"
+                placeholder="e.g. 35"
+                value={pricePerKg}
+                onChange={(e) => setPricePerKg(e.target.value)}
+                required
+                disabled={submitting || !isFarmerOrAdmin}
+              />
+              <span className="text-[10px] text-agri-earth-600 block mt-1">
+                Accepted from Fair Price recommendation or manually customized.
+              </span>
+            </div>
+
+            <div>
+              <Input
+                label="Mandi Benchmark (₹ per kg)"
+                type="number"
+                step="0.5"
+                placeholder="e.g. 32 (optional)"
+                value={mandiBenchmark}
+                onChange={(e) => setMandiBenchmark(e.target.value)}
+                disabled={submitting || !isFarmerOrAdmin}
+              />
+              <span className="text-[10px] text-agri-earth-600 block mt-1">
+                APMC reference benchmark used for buyer direct savings index.
+              </span>
+            </div>
+          </div>
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-agri-earth-800 mb-1.5">
