@@ -262,4 +262,115 @@ test.describe('AgriLink Fair Price Engine (SIH26033)', () => {
     await expect(card.getByText('Mandi Benchmark')).toBeVisible();
     await expect(card.getByText('₹32/kg')).toBeVisible();
   });
+
+  test('FAIR-PRICE 9: Changing Mandi Benchmark after applying Fair Price invalidates "Fair Price Applied" and displays custom benchmark status', async ({ page }) => {
+    await loginAs(page, FARMER_EMAIL);
+
+    await page.goto('/farmer');
+    await page.waitForLoadState('networkidle');
+
+    // Open modal
+    await page.getByRole('button', { name: /Create New Listing/i }).click();
+
+    // Set produce title and quantity
+    await page.getByLabel('Produce Title / Name').fill('Tomato');
+    await page.getByLabel('Available Stock Quantity (kg)').fill('200');
+
+    // Apply Suggested Fair Price
+    const applyBtn = page.getByRole('button', { name: /Apply Suggested Fair Price/i });
+    await applyBtn.click();
+
+    // Verify initial applied state
+    await expect(page.getByText('Fair Price Applied', { exact: true })).toBeVisible();
+
+    // Now modify the Mandi Benchmark input
+    const mandiInput = page.getByLabel('Mandi Benchmark (₹ per kg)');
+    await mandiInput.fill('40');
+
+    // "Fair Price Applied" MUST be invalidated immediately
+    await expect(page.getByText('Fair Price Applied', { exact: true })).not.toBeVisible();
+
+    // Custom Mandi Benchmark status badge MUST appear
+    await expect(page.getByText(/Custom Mandi Benchmark: ₹40\/kg/i)).toBeVisible();
+
+    // Selling price remains preserved
+    const priceInput = page.getByLabel('Selling Price (₹ per kg)');
+    expect(await priceInput.inputValue()).toBe('34.5');
+
+    // Restoring Mandi Benchmark back to 32 restores the matching Fair Price Applied state
+    await mandiInput.fill('32');
+    await expect(page.getByText('Fair Price Applied', { exact: true })).toBeVisible();
+  });
+
+  test('FAIR-PRICE 10: Farmer cannot purchase their own produce listing on Marketplace', async ({ page }) => {
+    await loginAs(page, FARMER_EMAIL);
+
+    await page.goto('/farmer');
+    await page.waitForLoadState('networkidle');
+
+    // Create a unique listing owned by this farmer
+    await page.getByRole('button', { name: /Create New Listing/i }).click();
+    const selfListingTitle = `Self Order Guard Batch ${Date.now()}`;
+    await page.getByLabel('Produce Title / Name').fill(selfListingTitle);
+    await page.getByLabel('Available Stock Quantity (kg)').fill('100');
+    await page.getByRole('button', { name: /Apply Suggested Fair Price/i }).click();
+    await page.getByRole('button', { name: /Publish Listing/i }).click();
+
+    await expect(page.getByText(/Produce listing published successfully/i)).toBeVisible({ timeout: 10000 });
+
+    // Navigate to Marketplace
+    await page.goto('/marketplace');
+    await page.waitForLoadState('networkidle');
+
+    // Search for farmer's own listing
+    const searchInput = page.getByPlaceholder(/Search produce name or description/i);
+    await searchInput.fill(selfListingTitle);
+
+    const card = page.locator('.space-y-4', { hasText: selfListingTitle }).first();
+    await expect(card).toBeVisible({ timeout: 10000 });
+
+    // Click "View Details" to open produce modal
+    await card.getByRole('button', { name: /View Details/i }).click();
+
+    // Verify modal displays "Your Listing" badge
+    await expect(page.getByText('Your Listing', { exact: true })).toBeVisible();
+
+    // Verify Self-Purchase Prohibited warning is displayed
+    await expect(page.getByText('Self-Purchase Prohibited')).toBeVisible();
+    await expect(page.getByText(/Producers cannot place orders on their own listings/i)).toBeVisible();
+
+    // Verify order placement button "Confirm Order" is NOT rendered
+    await expect(page.getByRole('button', { name: /Confirm Order/i })).not.toBeVisible();
+  });
+
+  test('FAIR-PRICE 11: Reference Mandi dropdown remains usable without overflow and handles category switching', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); // iPhone 12/13 mobile width
+    await loginAs(page, FARMER_EMAIL);
+
+    await page.goto('/farmer');
+    await page.waitForLoadState('networkidle');
+
+    // Open modal
+    await page.getByRole('button', { name: /Create New Listing/i }).click();
+    await page.getByLabel('Produce Title / Name').fill('Fresh Apple');
+
+    // Locate Reference Mandi select
+    const mandiSelect = page.locator('select[title="Select reference APMC Mandi market"]');
+    if (await mandiSelect.isVisible()) {
+      // Check that select element does not horizontally exceed its container
+      const selectBox = await mandiSelect.boundingBox();
+      expect(selectBox).not.toBeNull();
+      expect(selectBox!.width).toBeLessThanOrEqual(360);
+    }
+
+    // Switch categories (Vegetables -> Fruits -> Spices)
+    await page.getByRole('button', { name: /Fresh Fruits/i }).click();
+    await expect(page.getByText('AgriLink Fair Price Engine')).toBeVisible();
+
+    await page.getByRole('button', { name: /Organic Spices/i }).click();
+    await expect(page.getByText('AgriLink Fair Price Engine')).toBeVisible();
+
+    await page.getByRole('button', { name: /Fresh Vegetables/i }).click();
+    await expect(page.getByText('AgriLink Fair Price Engine')).toBeVisible();
+  });
 });

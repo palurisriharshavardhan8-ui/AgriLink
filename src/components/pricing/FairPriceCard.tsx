@@ -29,6 +29,7 @@ interface FairPriceCardProps {
   onSelectMandi: (mandiId: string) => void;
   onAcceptFairPrice: (suggestedPrice: number, benchmarkPrice: number) => void;
   currentPricePerKg: string;
+  currentMandiBenchmark?: string;
   quantityKg: number;
 }
 
@@ -39,14 +40,32 @@ export const FairPriceCard: React.FC<FairPriceCardProps> = ({
   onSelectMandi,
   onAcceptFairPrice,
   currentPricePerKg,
+  currentMandiBenchmark,
   quantityKg,
 }) => {
   const [showCalculationDetails, setShowCalculationDetails] = useState(false);
 
   const availableMarkets = getAvailableMandiLocations(category);
+
+  // Guard against out-of-range market ID when category changes
+  const activeMarketId = availableMarkets.some((m) => m.id === selectedMandiId)
+    ? selectedMandiId
+    : availableMarkets[0]?.id || recommendation.mandiRate.id;
+
   const currentPriceNum = parseFloat(currentPricePerKg);
-  const isApplied = !isNaN(currentPriceNum) && Math.abs(currentPriceNum - recommendation.suggestedPricePerKg) < 0.01;
-  const isOverridden = !isNaN(currentPriceNum) && currentPriceNum > 0 && !isApplied;
+  const currentBenchmarkNum = parseFloat(currentMandiBenchmark || '');
+
+  // Check whether current form inputs match the deterministic recommendation
+  const isPriceMatching = !isNaN(currentPriceNum) && Math.abs(currentPriceNum - recommendation.suggestedPricePerKg) < 0.01;
+  const isBenchmarkMatching =
+    !isNaN(currentBenchmarkNum) && Math.abs(currentBenchmarkNum - recommendation.mandiBenchmarkPricePerKg) < 0.01;
+
+  // "Fair Price Applied" is valid ONLY if BOTH selling price and mandi benchmark match current recommendation
+  const isApplied = isPriceMatching && isBenchmarkMatching;
+
+  // Detect customizations / overrides
+  const isPriceCustomized = !isNaN(currentPriceNum) && currentPriceNum > 0 && !isPriceMatching;
+  const isBenchmarkCustomized = !isNaN(currentBenchmarkNum) && currentBenchmarkNum > 0 && !isBenchmarkMatching;
 
   const {
     mandiRate,
@@ -61,39 +80,47 @@ export const FairPriceCard: React.FC<FairPriceCardProps> = ({
   } = recommendation;
 
   return (
-    <Card className="p-4 bg-gradient-to-br from-agri-sprout-soft/30 via-white to-agri-harvest-soft/20 border-agri-sprout-bright/40 rounded-2xl shadow-sm space-y-4">
+    <Card className="p-4 bg-gradient-to-br from-agri-sprout-soft/30 via-white to-agri-harvest-soft/20 border-agri-sprout-bright/40 rounded-2xl shadow-sm space-y-4 overflow-hidden">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-agri-earth-100 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-xl bg-agri-evergreen text-white flex items-center justify-center font-bold">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-8 w-8 rounded-xl bg-agri-evergreen text-white flex items-center justify-center font-bold shrink-0">
             <Scale className="h-4 w-4 text-agri-sprout-bright" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm font-extrabold text-agri-earth-900 leading-none">
                 AgriLink Fair Price Engine
               </h3>
-              <Badge variant="sprout" className="text-[9px] py-0 px-1.5 gap-1">
+              <Badge variant="sprout" className="text-[9px] py-0 px-1.5 gap-1 shrink-0">
                 <Sparkles className="h-2.5 w-2.5" />
                 <span>SIH26033 Benchmark</span>
               </Badge>
             </div>
-            <p className="text-[11px] text-agri-earth-700 mt-0.5">
+            <p className="text-[11px] text-agri-earth-700 mt-0.5 truncate">
               Transparent Mandi price discovery eliminating middleman margin
             </p>
           </div>
         </div>
 
         {/* Status indicator badge */}
-        <div>
+        <div className="shrink-0">
           {isApplied ? (
             <Badge variant="evergreen" className="text-[10px] gap-1 py-1">
               <CheckCircle2 className="h-3 w-3 text-agri-sprout-bright" />
               <span>Fair Price Applied</span>
             </Badge>
-          ) : isOverridden ? (
+          ) : isPriceCustomized && isBenchmarkCustomized ? (
+            <Badge variant="harvest" className="text-[10px] py-1">
+              <span>Custom Price & Benchmark Override</span>
+            </Badge>
+          ) : isPriceCustomized ? (
             <Badge variant="harvest" className="text-[10px] py-1">
               <span>Custom Price: ₹{currentPriceNum}/kg</span>
+            </Badge>
+          ) : isBenchmarkCustomized ? (
+            <Badge variant="harvest" className="text-[10px] py-1">
+              <span>Custom Mandi Benchmark: ₹{currentBenchmarkNum}/kg</span>
             </Badge>
           ) : (
             <Badge variant="outline" className="text-[10px] py-1 text-agri-earth-700">
@@ -104,27 +131,30 @@ export const FairPriceCard: React.FC<FairPriceCardProps> = ({
       </div>
 
       {/* Market / Location Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-agri-earth-200/80 text-xs">
-        <div className="flex items-center gap-1.5 text-agri-earth-700">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-agri-earth-200/80 text-xs min-w-0">
+        <div className="flex items-center gap-1.5 text-agri-earth-700 min-w-0 flex-1">
           <Building2 className="h-3.5 w-3.5 text-agri-sprout shrink-0" />
-          <span className="font-semibold text-agri-earth-900">Reference Mandi:</span>
-          <span className="truncate max-w-[200px] sm:max-w-[260px] font-medium" title={mandiRate.mandiName}>
+          <span className="font-semibold text-agri-earth-900 shrink-0">Reference Mandi:</span>
+          <span className="truncate font-medium min-w-0" title={mandiRate.mandiName}>
             {mandiRate.mandiName} ({mandiRate.district}, {mandiRate.state})
           </span>
         </div>
 
         {availableMarkets.length > 1 && (
-          <select
-            value={selectedMandiId || mandiRate.id}
-            onChange={(e) => onSelectMandi(e.target.value)}
-            className="text-xs rounded-lg border border-agri-earth-200 bg-agri-earth-50 px-2 py-1 font-semibold text-agri-earth-800 focus:outline-none focus:ring-1 focus:ring-agri-sprout cursor-pointer"
-          >
-            {availableMarkets.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <div className="min-w-0 w-full sm:w-auto shrink-0 sm:max-w-[250px]">
+            <select
+              value={activeMarketId}
+              onChange={(e) => onSelectMandi(e.target.value)}
+              className="w-full text-xs rounded-lg border border-agri-earth-200 bg-agri-earth-50 px-2 py-1 font-semibold text-agri-earth-800 focus:outline-none focus:ring-1 focus:ring-agri-sprout cursor-pointer truncate text-ellipsis"
+              title="Select reference APMC Mandi market"
+            >
+              {availableMarkets.map((m) => (
+                <option key={m.id} value={m.id} className="truncate">
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
 
@@ -140,7 +170,7 @@ export const FairPriceCard: React.FC<FairPriceCardProps> = ({
             ₹{mandiBenchmarkPricePerKg.toFixed(2)} <span className="text-xs font-normal text-agri-earth-600">/ kg</span>
           </div>
           <p className="text-[10px] text-agri-earth-500">
-            ₹{mandiRate.modalPricePerQuintal.toLocaleString('en-IN')}/quintal (APMC)
+            Official APMC rate (₹{mandiRate.modalPricePerQuintal.toLocaleString('en-IN')}/qtl)
           </p>
         </div>
 

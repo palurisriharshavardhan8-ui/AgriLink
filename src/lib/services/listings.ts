@@ -178,6 +178,26 @@ export async function createProduceListing(
 export async function createDirectOrder(params: DirectOrderParams) {
   const supabase = createClient();
 
+  // Retrieve authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Unauthenticated request: You must be signed in to place an order.');
+  }
+
+  // Check listing owner to reject self-purchase at application service layer
+  const { data: listing, error: listingError } = await supabase
+    .from('produce_listings')
+    .select('farmer_id, is_active')
+    .eq('id', params.listing_id)
+    .single();
+
+  if (listing && listing.farmer_id === user.id) {
+    throw new Error('Self-purchase is not allowed: Producers cannot purchase their own produce listings.');
+  }
+
   const { data, error } = await supabase.rpc('place_direct_order', {
     p_listing_id: params.listing_id,
     p_quantity_kg: params.quantity_kg,

@@ -40,6 +40,8 @@ export const ProduceDetailModal: React.FC<ProduceDetailModalProps> = ({
     );
   }
 
+  const isOwner = !!(user && listing && user.id === listing.farmer_id);
+
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -47,6 +49,11 @@ export const ProduceDetailModal: React.FC<ProduceDetailModalProps> = ({
 
     if (!user) {
       setErrorMsg('Please sign in to place an order.');
+      return;
+    }
+
+    if (isOwner) {
+      setErrorMsg('Self-purchase is not allowed: Producers cannot purchase their own produce listings.');
       return;
     }
 
@@ -91,7 +98,12 @@ export const ProduceDetailModal: React.FC<ProduceDetailModalProps> = ({
             <Badge variant="sprout" className="text-xs uppercase">
               {listing.category.replace('_', ' ')}
             </Badge>
-            {savingsPercent !== null && (
+            {isOwner && (
+              <Badge variant="outline" className="text-xs font-semibold text-amber-700 border-amber-300 bg-amber-50">
+                Your Listing
+              </Badge>
+            )}
+            {savingsPercent !== null && !isOwner && (
               <Badge variant="evergreen" className="text-xs gap-1">
                 <TrendingDown className="h-3.5 w-3.5 text-agri-sprout-bright" />
                 <span>{savingsPercent}% Direct Savings</span>
@@ -187,50 +199,69 @@ export const ProduceDetailModal: React.FC<ProduceDetailModalProps> = ({
           </div>
         )}
 
-        {/* Direct Order Form */}
-        <form onSubmit={handlePlaceOrder} className="pt-4 border-t border-agri-earth-200 space-y-4">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-agri-earth-900 flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4 text-agri-sprout" />
-            <span>Place Direct Purchase Order</span>
-          </h4>
-
-          <div className="flex items-end gap-4">
-            <div className="flex-1">
-              <Input
-                label="Order Quantity (kg)"
-                type="number"
-                min="1"
-                max={listing.available_quantity_kg}
-                value={orderQty}
-                onChange={(e) => setOrderQty(e.target.value)}
-                required
-                disabled={submitting}
-              />
+        {/* Direct Order Form or Self-Purchase Guard */}
+        {isOwner ? (
+          <div className="pt-4 border-t border-agri-earth-200 space-y-3">
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-amber-800">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>Self-Purchase Prohibited</span>
+              </div>
+              <p className="text-agri-earth-700 leading-relaxed">
+                You are the registered producer/seller of this produce listing (<strong>{listing.title}</strong>). Producers cannot place orders on their own listings.
+              </p>
             </div>
-
-            <div className="flex-1 pb-1">
-              <span className="text-xs font-semibold text-agri-earth-700 block">Total Amount</span>
-              <span className="text-lg font-black text-agri-earth-900">
-                ₹{totalPrice.toLocaleString('en-IN')}
-              </span>
+            <div className="flex items-center justify-end pt-1">
+              <Button type="button" variant="outline" size="sm" onClick={onClose}>
+                Close
+              </Button>
             </div>
           </div>
+        ) : (
+          <form onSubmit={handlePlaceOrder} className="pt-4 border-t border-agri-earth-200 space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-agri-earth-900 flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-agri-sprout" />
+              <span>Place Direct Purchase Order</span>
+            </h4>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={submitting}>
-              Close
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              disabled={submitting || listing.available_quantity_kg <= 0}
-              className="gap-2 font-bold"
-            >
-              {submitting ? 'Processing Order...' : 'Confirm Order'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex items-end gap-4">
+              <div className="flex-1">
+                <Input
+                  label="Order Quantity (kg)"
+                  type="number"
+                  min="1"
+                  max={listing.available_quantity_kg}
+                  value={orderQty}
+                  onChange={(e) => setOrderQty(e.target.value)}
+                  required
+                  disabled={submitting}
+                />
+              </div>
+
+              <div className="flex-1 pb-1">
+                <span className="text-xs font-semibold text-agri-earth-700 block">Total Amount</span>
+                <span className="text-lg font-black text-agri-earth-900">
+                  ₹{totalPrice.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={submitting}>
+                Close
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                disabled={submitting || listing.available_quantity_kg <= 0}
+                className="gap-2 font-bold"
+              >
+                {submitting ? 'Processing Order...' : 'Confirm Order'}
+              </Button>
+            </div>
+          </form>
+        )}
       </Card>
     </div>
   );

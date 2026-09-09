@@ -134,7 +134,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <Card className="w-full max-w-lg p-6 bg-white shadow-2xl rounded-2xl border-agri-earth-200 max-h-[90vh] overflow-y-auto relative space-y-5">
+      <Card className="w-full max-w-lg p-6 bg-white shadow-2xl rounded-2xl border-agri-earth-200 max-h-[90vh] overflow-y-auto overflow-x-hidden relative space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-agri-earth-100 pb-3">
           <div className="flex items-center gap-3">
@@ -238,6 +238,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             onSelectMandi={(mandiId) => setSelectedMandiId(mandiId)}
             onAcceptFairPrice={handleAcceptFairPrice}
             currentPricePerKg={pricePerKg}
+            currentMandiBenchmark={mandiBenchmark}
             quantityKg={parseFloat(quantityKg) || 1}
           />
 
@@ -254,7 +255,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
                 disabled={submitting || !isFarmerOrAdmin}
               />
               <span className="text-[10px] text-agri-earth-600 block mt-1">
-                Accepted from Fair Price recommendation or manually customized.
+                Farmer&apos;s chosen listing price (buyers pay this rate per kg).
               </span>
             </div>
 
