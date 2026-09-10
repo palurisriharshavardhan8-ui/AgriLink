@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "seed:demo": "node scripts/seed-demo.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

@@ -18,7 +18,8 @@ import {
   inferCategoryFromProduceName,
   matchMandiLocation,
 } from '@/lib/services/voiceListing';
-import { X, Sprout, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { createCommunityCart } from '@/lib/services/communityCart';
+import { X, Sprout, Upload, AlertCircle, CheckCircle2, Users, Sparkles, TrendingDown } from 'lucide-react';
 
 interface CreateListingModalProps {
   isOpen: boolean;
@@ -49,6 +50,14 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedMandiId, setSelectedMandiId] = useState('');
+
+  // Community Cart Configuration State
+  const [enableCommunityCart, setEnableCommunityCart] = useState(false);
+  const [communityTargetKg, setCommunityTargetKg] = useState('');
+  const [communityPrice, setCommunityPrice] = useState('');
+  const [communityLocality, setCommunityLocality] = useState('Kolar Sector 4 / APMC Cluster');
+  const [communityClosingHours, setCommunityClosingHours] = useState('24');
+  const [communityMinCommitment, setCommunityMinCommitment] = useState('2');
 
   // Dynamically compute deterministic fair price recommendation
   const fairPriceRecommendation = useMemo(() => {
@@ -159,7 +168,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     setSubmitting(true);
 
     try {
-      await createProduceListing(
+      const listing = await createProduceListing(
         user.id,
         {
           title: title.trim(),
@@ -172,7 +181,31 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         imageFile
       );
 
-      setSuccessMsg('Produce listing published successfully!');
+      // Create linked Community Cart if enabled by farmer
+      if (enableCommunityCart) {
+        const commTarget = parseFloat(communityTargetKg) || Math.min(qty, 100);
+        const commPrice = parseFloat(communityPrice) || Math.round(price * 0.9 * 2) / 2;
+        const closingAt = new Date(Date.now() + parseInt(communityClosingHours || '24') * 3600 * 1000).toISOString();
+
+        await createCommunityCart({
+          listingId: listing?.id || `listing-${Date.now()}`,
+          farmerId: user.id,
+          title: `${title.trim()} (Community Batch)`,
+          category,
+          targetQuantityKg: commTarget,
+          communityPrice: commPrice,
+          regularPrice: price,
+          locality: communityLocality,
+          closingAt,
+          minCommitmentKg: parseFloat(communityMinCommitment) || 2,
+        });
+      }
+
+      setSuccessMsg(
+        enableCommunityCart
+          ? 'Produce listing & Hyperlocal Community Cart published successfully!'
+          : 'Produce listing published successfully!'
+      );
       setTimeout(() => {
         onSuccess();
         onClose();
@@ -184,6 +217,9 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         setDescription('');
         setImageFile(null);
         setSelectedMandiId('');
+        setEnableCommunityCart(false);
+        setCommunityTargetKg('');
+        setCommunityPrice('');
         setSuccessMsg(null);
         setVoiceNotice(null);
       }, 1500);
@@ -360,6 +396,153 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
                 APMC reference benchmark used for buyer direct savings index.
               </span>
             </div>
+          </div>
+
+          {/* Hyperlocal Community Cart Integration Toggle & Config */}
+          <div className="rounded-2xl border border-agri-sprout/40 bg-gradient-to-br from-agri-sprout/10 via-agri-earth-50 to-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-agri-sprout/20 text-agri-evergreen">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-agri-evergreen">
+                      Community Cart Pooling
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-agri-sprout/30 text-agri-evergreen">
+                      Bulk Pre-Order
+                    </span>
+                  </div>
+                  <p className="text-xs text-agri-earth-700 mt-0.5">
+                    Allow nearby consumers in the same locality to pool demand. Guarantees bulk sale clearance.
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer mt-1">
+                <input
+                  type="checkbox"
+                  checked={enableCommunityCart}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setEnableCommunityCart(checked);
+                    if (checked) {
+                      if (!communityTargetKg && quantityKg) {
+                        setCommunityTargetKg(String(Math.min(parseFloat(quantityKg) || 50, 100)));
+                      }
+                      if (!communityPrice && pricePerKg) {
+                        setCommunityPrice(String(Math.round((parseFloat(pricePerKg) || 30) * 0.9 * 2) / 2));
+                      }
+                    }
+                  }}
+                  disabled={submitting || !isFarmerOrAdmin}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-agri-earth-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-agri-sprout"></div>
+              </label>
+            </div>
+
+            {enableCommunityCart && (
+              <div className="mt-4 pt-3 border-t border-agri-earth-200/60 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <Input
+                      label="Target Pool (kg)"
+                      type="number"
+                      step="5"
+                      placeholder="e.g. 50"
+                      value={communityTargetKg}
+                      onChange={(e) => setCommunityTargetKg(e.target.value)}
+                      required={enableCommunityCart}
+                      disabled={submitting}
+                    />
+                    <span className="text-[10px] text-agri-earth-500 block mt-0.5">
+                      Min total kg needed to unlock batch
+                    </span>
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Community Price (₹/kg)"
+                      type="number"
+                      step="0.5"
+                      placeholder="e.g. 27"
+                      value={communityPrice}
+                      onChange={(e) => setCommunityPrice(e.target.value)}
+                      required={enableCommunityCart}
+                      disabled={submitting}
+                    />
+                    <span className="text-[10px] text-agri-earth-500 block mt-0.5">
+                      Special wholesale rate for poolers
+                    </span>
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Min per Order (kg)"
+                      type="number"
+                      step="1"
+                      placeholder="e.g. 2"
+                      value={communityMinCommitment}
+                      onChange={(e) => setCommunityMinCommitment(e.target.value)}
+                      required={enableCommunityCart}
+                      disabled={submitting}
+                    />
+                    <span className="text-[10px] text-agri-earth-500 block mt-0.5">
+                      Min commitment per consumer
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-agri-earth-800 mb-1">
+                      Delivery Hub / Locality
+                    </label>
+                    <input
+                      type="text"
+                      value={communityLocality}
+                      onChange={(e) => setCommunityLocality(e.target.value)}
+                      placeholder="e.g. Indiranagar, Bengaluru or Kolar APMC"
+                      className="w-full rounded-xl border border-agri-earth-200 px-3 py-2 text-xs focus:ring-2 focus:ring-agri-sprout focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-agri-earth-800 mb-1">
+                      Pool Closes In
+                    </label>
+                    <select
+                      value={communityClosingHours}
+                      onChange={(e) => setCommunityClosingHours(e.target.value)}
+                      className="w-full rounded-xl border border-agri-earth-200 px-3 py-2 text-xs focus:ring-2 focus:ring-agri-sprout focus:outline-none bg-white"
+                    >
+                      <option value="12">12 Hours (Fast Pool)</option>
+                      <option value="24">24 Hours (Recommended)</option>
+                      <option value="48">48 Hours (Weekend Pool)</option>
+                      <option value="72">72 Hours (Large Batch)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Pool Economics Summary */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-agri-sprout/15 border border-agri-sprout/30 text-xs text-agri-evergreen">
+                  <div className="flex items-center gap-1.5 font-semibold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Projected Farmer Payout:</span>
+                  </div>
+                  <div className="font-mono font-bold text-sm">
+                    ₹{(
+                      (parseFloat(communityTargetKg) || 0) *
+                      (parseFloat(communityPrice) || 0)
+                    ).toLocaleString('en-IN')}
+                    <span className="text-[10px] font-normal text-agri-earth-700 ml-1">
+                      (for {communityTargetKg || 0} kg bulk dispatch)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

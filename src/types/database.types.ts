@@ -145,6 +145,15 @@ export interface Database {
           target_discount_quantity_kg: number;
           current_aggregated_quantity_kg: number;
           created_at: string;
+          listing_id?: string | null;
+          farmer_id?: string | null;
+          title?: string | null;
+          category?: ProduceCategory | null;
+          community_price?: number | null;
+          locality?: string | null;
+          closing_at?: string | null;
+          min_commitment_kg?: number | null;
+          updated_at?: string | null;
         };
         Insert: {
           id?: string;
@@ -154,6 +163,15 @@ export interface Database {
           target_discount_quantity_kg?: number;
           current_aggregated_quantity_kg?: number;
           created_at?: string;
+          listing_id?: string | null;
+          farmer_id?: string | null;
+          title?: string | null;
+          category?: ProduceCategory | null;
+          community_price?: number | null;
+          locality?: string | null;
+          closing_at?: string | null;
+          min_commitment_kg?: number | null;
+          updated_at?: string | null;
         };
         Update: {
           id?: string;
@@ -163,6 +181,50 @@ export interface Database {
           target_discount_quantity_kg?: number;
           current_aggregated_quantity_kg?: number;
           created_at?: string;
+          listing_id?: string | null;
+          farmer_id?: string | null;
+          title?: string | null;
+          category?: ProduceCategory | null;
+          community_price?: number | null;
+          locality?: string | null;
+          closing_at?: string | null;
+          min_commitment_kg?: number | null;
+          updated_at?: string | null;
+        };
+      };
+      community_cart_members: {
+        Row: {
+          id: string;
+          community_cart_id: string;
+          customer_id: string;
+          quantity_kg: number;
+          total_price: number;
+          delivery_option: string;
+          delivery_landmark: string | null;
+          status: string;
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          community_cart_id: string;
+          customer_id: string;
+          quantity_kg: number;
+          total_price: number;
+          delivery_option?: string;
+          delivery_landmark?: string | null;
+          status?: string;
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          community_cart_id?: string;
+          customer_id?: string;
+          quantity_kg?: number;
+          total_price?: number;
+          delivery_option?: string;
+          delivery_landmark?: string | null;
+          status?: string;
+          joined_at?: string;
         };
       };
       orders: {

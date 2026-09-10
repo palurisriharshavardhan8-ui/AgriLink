@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Package,
   User,
+  Users,
   LucideIcon,
 } from 'lucide-react';
 
@@ -24,6 +25,12 @@ export const ALL_NAV_ITEMS: Record<string, NavItemConfig> = {
     href: '/marketplace',
     icon: Store,
     badge: 'Core',
+  },
+  'community-cart': {
+    label: 'Community Cart',
+    href: '/community-cart',
+    icon: Users,
+    badge: 'Pooling',
   },
   farmer: {
     label: 'Farmer / FPO',
@@ -86,12 +93,14 @@ export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
 export const ROLE_NAV_ITEMS: Record<UserRole, NavItemConfig[]> = {
   consumer: [
     ALL_NAV_ITEMS.marketplace,
+    ALL_NAV_ITEMS['community-cart'],
     ALL_NAV_ITEMS.consumer,
     ALL_NAV_ITEMS.orders,
     ALL_NAV_ITEMS.profile,
   ],
   farmer_fpo: [
     ALL_NAV_ITEMS.marketplace,
+    ALL_NAV_ITEMS['community-cart'],
     ALL_NAV_ITEMS.farmer,
     ALL_NAV_ITEMS.orders,
     ALL_NAV_ITEMS.profile,
@@ -109,6 +118,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, NavItemConfig[]> = {
   ],
   admin: [
     ALL_NAV_ITEMS.marketplace,
+    ALL_NAV_ITEMS['community-cart'],
     ALL_NAV_ITEMS.farmer,
     ALL_NAV_ITEMS.consumer,
     ALL_NAV_ITEMS['bulk-buyer'],
@@ -128,12 +138,13 @@ export const ROLE_NAV_ITEMS: Record<UserRole, NavItemConfig[]> = {
  * - Admin: all routes allowed
  */
 export const ROLE_ALLOWED_ROUTES: Record<UserRole, string[]> = {
-  consumer: ['/marketplace', '/consumer', '/orders', '/profile'],
-  farmer_fpo: ['/marketplace', '/farmer', '/orders', '/profile'],
+  consumer: ['/marketplace', '/community-cart', '/consumer', '/orders', '/profile'],
+  farmer_fpo: ['/marketplace', '/community-cart', '/farmer', '/orders', '/profile'],
   bulk_buyer: ['/marketplace', '/bulk-buyer', '/orders', '/profile'],
   delivery_partner: ['/delivery', '/orders', '/profile'],
   admin: [
     '/marketplace',
+    '/community-cart',
     '/farmer',
     '/consumer',
     '/bulk-buyer',
