@@ -10,6 +10,14 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { FairPriceCard } from '@/components/pricing/FairPriceCard';
+import { VoiceListingAssistant } from '@/components/listings/VoiceListingAssistant';
+import {
+  VoiceExtractionData,
+  normalizeExtractedQuantity,
+  normalizePricePerKg,
+  inferCategoryFromProduceName,
+  matchMandiLocation,
+} from '@/lib/services/voiceListing';
 import { X, Sprout, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface CreateListingModalProps {
@@ -55,6 +63,60 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const handleAcceptFairPrice = (suggestedPrice: number, benchmarkPrice: number) => {
     setPricePerKg(suggestedPrice.toString());
     setMandiBenchmark(benchmarkPrice.toString());
+  };
+
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
+
+  const handleVoiceDataExtracted = (data: VoiceExtractionData) => {
+    setErrorMsg(null);
+
+    // 1. Product Title & inferred category
+    let currentCategory = category;
+    if (data.product) {
+      setTitle(data.product);
+      const inferredCat = inferCategoryFromProduceName(data.product);
+      if (inferredCat) {
+        setCategory(inferredCat);
+        currentCategory = inferredCat;
+      }
+    }
+
+    // 2. Quantity (normalized to kg)
+    if (data.quantity != null) {
+      const { quantityKg: normQty } = normalizeExtractedQuantity(data.quantity, data.unit);
+      if (normQty != null) {
+        setQuantityKg(normQty.toString());
+      }
+    }
+
+    // 3. Selling Price
+    if (data.price != null) {
+      const normPrice = normalizePricePerKg(data.price, data.unit);
+      if (normPrice != null) {
+        setPricePerKg(normPrice.toString());
+      }
+    }
+
+    // 4. Mandi Location Matching
+    if (data.location) {
+      const matchedMandi = matchMandiLocation(data.location, currentCategory);
+      if (matchedMandi) {
+        setSelectedMandiId(matchedMandi);
+      }
+    }
+
+    // 5. Append harvestDate, availabilityDate, or location notes into description
+    const metaParts: string[] = [];
+    if (data.location) metaParts.push(`Location: ${data.location}`);
+    if (data.harvestDate) metaParts.push(`Harvest: ${data.harvestDate}`);
+    if (data.availabilityDate) metaParts.push(`Available: ${data.availabilityDate}`);
+
+    if (metaParts.length > 0) {
+      const voiceNote = `[Voice Details] ${metaParts.join(' | ')}`;
+      setDescription((prev) => (prev ? `${prev}\n${voiceNote}` : voiceNote));
+    }
+
+    setVoiceNotice('Voice details filled! Please check your details before publishing.');
   };
 
   const [submitting, setSubmitting] = useState(false);
@@ -123,6 +185,7 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
         setImageFile(null);
         setSelectedMandiId('');
         setSuccessMsg(null);
+        setVoiceNotice(null);
       }, 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to publish listing.';
@@ -157,6 +220,30 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* AI Voice Listing Assistant */}
+        <VoiceListingAssistant
+          onDataExtracted={handleVoiceDataExtracted}
+          disabled={submitting || !isFarmerOrAdmin}
+        />
+
+        {/* Voice Confirmation Banner */}
+        {voiceNotice && (
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center justify-between shadow-2xs animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+              <span className="font-semibold">{voiceNotice}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setVoiceNotice(null)}
+              className="p-1 text-amber-700 hover:text-amber-900 rounded-lg"
+              title="Dismiss note"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Role Warning if not Farmer */}
         {!isFarmerOrAdmin && (
